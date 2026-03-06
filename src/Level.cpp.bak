@@ -1,0 +1,338 @@
+#include "Level.h"
+#include <cmath>
+#include <iostream>
+
+Level::Level() : m_levelNumber(1), m_completed(false), m_gameOver(false), 
+                 m_enemiesKilled(0), m_totalEnemies(0), m_mousePressed(false) {
+    // Убрал инициализацию Text объектов - они создадутся автоматически
+}
+
+bool Level::init(int levelNumber) {
+    m_levelNumber = levelNumber;
+    m_completed = false;
+    m_gameOver = false;
+    m_enemiesKilled = 0;
+    m_mousePressed = false;
+    
+    // Загружаем шрифт
+    if (!m_font.openFromFile("assets/fonts/Helvetica.ttc")) {
+        if (!m_font.openFromFile("/Library/Fonts/Arial.ttf")) {
+            std::cout << "Warning: Font not found in Level" << std::endl;
+        }
+    }
+    
+    // Инициализируем игрока
+    m_player.init();
+    m_player.setPosition(400.0f, 300.0f);
+    
+    // Очищаем векторы
+    m_enemies.clear();
+    m_bullets.clear();
+    m_obstacles.clear();
+    m_heartBonuses.clear();
+    
+    // Создаём препятствия для уровня
+    createObstaclesForLevel();
+    
+    // Спавним врагов
+    spawnEnemiesForLevel();
+    
+    // Настраиваем текстовые элементы (используем setFont вместо конструктора)
+    m_levelText.setFont(m_font);
+    m_levelText.setString("Level " + std::to_string(levelNumber));
+    m_levelText.setCharacterSize(24);
+    m_levelText.setFillColor(sf::Color::White);
+    m_levelText.setPosition({10, 10});
+    
+    m_healthText.setFont(m_font);
+    m_healthText.setString("Health: " + std::to_string(m_player.getHealth()) + 
+                           "/" + std::to_string(m_player.getMaxHealth()));
+    m_healthText.setCharacterSize(24);
+    m_healthText.setFillColor(sf::Color::White);
+    m_healthText.setPosition({10, 40});
+    
+    m_enemiesText.setFont(m_font);
+    m_enemiesText.setString("Enemies: 0/" + std::to_string(m_totalEnemies));
+    m_enemiesText.setCharacterSize(24);
+    m_enemiesText.setFillColor(sf::Color::White);
+    m_enemiesText.setPosition({10, 70});
+    
+    return true;
+}
+
+void Level::update() {
+    if (m_completed || m_gameOver) return;
+    
+    float deltaTime = 1.0f / 60.0f;
+    
+    m_player.update(deltaTime, sf::RenderWindow());
+    
+    for (auto& enemy : m_enemies) {
+        enemy->update(deltaTime, m_player.getPosition());
+    }
+    
+    for (auto& bullet : m_bullets) {
+        bullet->update(deltaTime);
+    }
+    
+    m_bullets.erase(
+        std::remove_if(m_bullets.begin(), m_bullets.end(),
+            [](const auto& bullet) { return !bullet->isActive(); }),
+        m_bullets.end()
+    );
+    
+    updateBonuses(deltaTime);
+    checkCollisions();
+    
+    if (m_enemies.empty() && !m_completed) {
+        m_completed = true;
+    }
+    
+    m_healthText.setString("Health: " + std::to_string(m_player.getHealth()) + 
+                          "/" + std::to_string(m_player.getMaxHealth()));
+    
+    m_enemiesText.setString("Enemies: " + std::to_string(m_enemiesKilled) + 
+                           "/" + std::to_string(m_totalEnemies));
+}
+
+void Level::render(sf::RenderWindow& window) {
+    for (const auto& obstacle : m_obstacles) {
+        window.draw(obstacle.shape);
+    }
+    
+    for (const auto& bonus : m_heartBonuses) {
+        if (bonus.active) {
+            window.draw(bonus.shape);
+        }
+    }
+    
+    m_player.render(window);
+    
+    for (const auto& enemy : m_enemies) {
+        enemy->render(window);
+    }
+    
+    for (const auto& bullet : m_bullets) {
+        bullet->render(window);
+    }
+    
+    window.draw(m_levelText);
+    window.draw(m_healthText);
+    window.draw(m_enemiesText);
+}
+
+void Level::handleEvent(const sf::Event& event, sf::RenderWindow& window) {
+    if (auto mouseButtonEvent = event.getIf<sf::Event::MouseButtonPressed>()) {
+        if (mouseButtonEvent->button == sf::Mouse::Button::Left) {
+            m_mousePressed = true;
+            
+            sf::Vector2i mousePos = sf::Mouse::getPosition(window);
+            sf::Vector2f worldMousePos = window.mapPixelToCoords(mousePos);
+            sf::Vector2f direction = worldMousePos - m_player.getPosition();
+            
+            auto bullet = m_player.shoot();
+            if (bullet) {
+                bullet = std::make_unique<Bullet>(m_player.getPosition(), direction);
+                m_bullets.push_back(std::move(bullet));
+            }
+        }
+    }
+    
+    if (auto mouseButtonEvent = event.getIf<sf::Event::MouseButtonReleased>()) {
+        if (mouseButtonEvent->button == sf::Mouse::Button::Left) {
+            m_mousePressed = false;
+        }
+    }
+}
+
+void Level::spawnEnemiesForLevel() {
+    switch (m_levelNumber) {
+        case 1:
+            setupLevel1();
+            break;
+        case 2:
+            setupLevel2();
+            break;
+        case 3:
+            setupLevel3();
+            break;
+    }
+    
+    m_totalEnemies = m_enemies.size();
+}
+
+void Level::createObstaclesForLevel() {
+    switch (m_levelNumber) {
+        case 1: {
+            Obstacle obs;
+            obs.shape.setSize({100, 100});
+            obs.shape.setFillColor(sf::Color(100, 100, 100));
+            obs.shape.setPosition({350.0f, 250.0f});
+            obs.bounds = obs.shape.getGlobalBounds();
+            m_obstacles.push_back(obs);
+            break;
+        }
+        case 2: {
+            Obstacle obs1;
+            obs1.shape.setSize({80, 80});
+            obs1.shape.setFillColor(sf::Color(100, 100, 100));
+            obs1.shape.setPosition({200.0f, 200.0f});
+            obs1.bounds = obs1.shape.getGlobalBounds();
+            m_obstacles.push_back(obs1);
+            
+            Obstacle obs2;
+            obs2.shape.setSize({80, 80});
+            obs2.shape.setFillColor(sf::Color(100, 100, 100));
+            obs2.shape.setPosition({500.0f, 300.0f});
+            obs2.bounds = obs2.shape.getGlobalBounds();
+            m_obstacles.push_back(obs2);
+            break;
+        }
+        case 3: {
+            for (int i = 0; i < 3; i++) {
+                Obstacle obs;
+                obs.shape.setSize({60, 200});
+                obs.shape.setFillColor(sf::Color(100, 100, 100));
+                obs.shape.setPosition({200.0f + static_cast<float>(i) * 200.0f, 200.0f});
+                obs.bounds = obs.shape.getGlobalBounds();
+                m_obstacles.push_back(obs);
+            }
+            break;
+        }
+    }
+}
+
+void Level::checkCollisions() {
+    for (auto& bullet : m_bullets) {
+        if (!bullet->isActive()) continue;
+        
+        for (auto& enemy : m_enemies) {
+            if (!enemy->isAlive()) continue;
+            
+            if (bullet->getBounds().findIntersection(enemy->getBounds())) {
+                enemy->takeDamage(bullet->getDamage());
+                bullet->deactivate();
+                
+                if (!enemy->isAlive()) {
+                    m_enemiesKilled++;
+                    spawnHeartBonus(enemy->getPosition());
+                }
+                break;
+            }
+        }
+        
+        for (const auto& obstacle : m_obstacles) {
+            if (bullet->isActive() && bullet->getBounds().findIntersection(obstacle.bounds)) {
+                bullet->deactivate();
+                break;
+            }
+        }
+    }
+    
+    for (auto& enemy : m_enemies) {
+        if (!enemy->isAlive()) continue;
+        
+        if (m_player.getBounds().findIntersection(enemy->getBounds())) {
+            m_player.takeDamage(1);
+            enemy->takeDamage(999);
+            
+            if (m_player.getHealth() <= 0) {
+                m_gameOver = true;
+            }
+        }
+    }
+    
+    for (auto& bonus : m_heartBonuses) {
+        if (!bonus.active) continue;
+        
+        if (m_player.getBounds().findIntersection(bonus.shape.getGlobalBounds())) {
+            m_player.heal(1);
+            bonus.active = false;
+        }
+    }
+    
+    m_enemies.erase(
+        std::remove_if(m_enemies.begin(), m_enemies.end(),
+            [](const auto& enemy) { return !enemy->isAlive(); }),
+        m_enemies.end()
+    );
+}
+
+void Level::updateBonuses(float deltaTime) {
+    for (auto& bonus : m_heartBonuses) {
+        if (bonus.active) {
+            bonus.lifetime -= deltaTime;
+            if (bonus.lifetime <= 0.0f) {
+                bonus.active = false;
+            }
+            
+            float scale = 1.0f + 0.2f * std::sin(bonus.lifetime * 5.0f);
+            bonus.shape.setScale({scale, scale});
+        }
+    }
+}
+
+void Level::spawnHeartBonus(const sf::Vector2f& position) {
+    HeartBonus bonus;
+    bonus.position = position;
+    bonus.active = true;
+    bonus.lifetime = HeartBonus::MAX_LIFETIME;
+    
+    bonus.shape.setRadius(10.0f);
+    bonus.shape.setFillColor(sf::Color::Red);
+    bonus.shape.setOrigin({10.0f, 10.0f});
+    bonus.shape.setPosition(position);
+    
+    m_heartBonuses.push_back(bonus);
+}
+
+bool Level::checkObstacleCollision(const sf::FloatRect& bounds) const {
+    for (const auto& obstacle : m_obstacles) {
+        if (bounds.findIntersection(obstacle.bounds)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void Level::setupLevel1() {
+    auto enemy1 = std::make_unique<Enemy>(EnemyType::SIMPLE);
+    enemy1->init({200.0f, 200.0f});
+    m_enemies.push_back(std::move(enemy1));
+    
+    auto enemy2 = std::make_unique<Enemy>(EnemyType::SIMPLE);
+    enemy2->init({600.0f, 400.0f});
+    m_enemies.push_back(std::move(enemy2));
+}
+
+void Level::setupLevel2() {
+    auto enemy1 = std::make_unique<Enemy>(EnemyType::SIMPLE);
+    enemy1->init({200.0f, 200.0f});
+    m_enemies.push_back(std::move(enemy1));
+    
+    auto enemy2 = std::make_unique<Enemy>(EnemyType::SIMPLE);
+    enemy2->init({600.0f, 400.0f});
+    m_enemies.push_back(std::move(enemy2));
+    
+    auto enemy3 = std::make_unique<Enemy>(EnemyType::FAST);
+    enemy3->init({400.0f, 100.0f});
+    m_enemies.push_back(std::move(enemy3));
+}
+
+void Level::setupLevel3() {
+    auto enemy1 = std::make_unique<Enemy>(EnemyType::TANK);
+    enemy1->init({300.0f, 300.0f});
+    m_enemies.push_back(std::move(enemy1));
+    
+    auto enemy2 = std::make_unique<Enemy>(EnemyType::FAST);
+    enemy2->init({200.0f, 100.0f});
+    m_enemies.push_back(std::move(enemy2));
+    
+    auto enemy3 = std::make_unique<Enemy>(EnemyType::FAST);
+    enemy3->init({600.0f, 500.0f});
+    m_enemies.push_back(std::move(enemy3));
+    
+    auto enemy4 = std::make_unique<Enemy>(EnemyType::SIMPLE);
+    enemy4->init({500.0f, 200.0f});
+    m_enemies.push_back(std::move(enemy4));
+}
