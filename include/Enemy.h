@@ -45,7 +45,7 @@ private:
     EnemyState m_currentState;
     
 public:
-    Enemy(EnemyType type);
+    Enemy(EnemyType type, int levelNumber = 1);
     ~Enemy() = default;
     
     void init(const sf::Vector2f& startPos);

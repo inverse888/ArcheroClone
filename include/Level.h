@@ -37,6 +37,9 @@ private:
     int m_enemiesKilled;
     int m_totalEnemies;
     
+    bool m_heartDropped; // Only one heart drop per level
+    int m_heartDropAtKill; // Which kill number triggers the heart
+    
     sf::Font m_font;
     sf::Texture m_heartTexture;
     sf::Sprite m_heartSprite;

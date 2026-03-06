@@ -4,23 +4,26 @@
 #include <cmath>
 #include <iostream>
 
-Enemy::Enemy(EnemyType type) : m_type(type), m_hasTexture(false), m_health(5), m_maxHealth(5), m_speed(80.0f),
+Enemy::Enemy(EnemyType type, int levelNumber) : m_type(type), m_hasTexture(false), m_health(5), m_maxHealth(5), m_speed(80.0f),
                                m_currentDirection(EnemyDirection::Down), m_currentState(EnemyState::Idle) {
+    // Level scaling: each level adds 20% speed and HP
+    float levelScale = 1.0f + (levelNumber - 1) * 0.25f;
+    
     switch (type) {
-        case EnemyType::SIMPLE:
-            m_speed = 80.0f;
-            m_health = 5;
-            m_maxHealth = 5;
+        case EnemyType::SIMPLE: // Vampires1 — weakest
+            m_speed = 70.0f * levelScale;
+            m_health = static_cast<int>(3 * levelScale);
+            m_maxHealth = m_health;
             break;
-        case EnemyType::FAST:
-            m_speed = 150.0f;
-            m_health = 5;
-            m_maxHealth = 5;
+        case EnemyType::FAST: // Vampires2 — fast
+            m_speed = 140.0f * levelScale;
+            m_health = static_cast<int>(3 * levelScale);
+            m_maxHealth = m_health;
             break;
-        case EnemyType::TANK:
-            m_speed = 40.0f;
-            m_health = 15;
-            m_maxHealth = 15;
+        case EnemyType::TANK: // Vampires3 — tank, slow but beefy
+            m_speed = 40.0f * levelScale;
+            m_health = static_cast<int>(10 * levelScale);
+            m_maxHealth = m_health;
             break;
     }
 }

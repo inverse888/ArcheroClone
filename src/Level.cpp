@@ -5,21 +5,22 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
+#include <random>
 
 Level::Level() : m_levelNumber(1), m_completed(false), m_gameOver(false), 
                  m_enemiesKilled(0), m_totalEnemies(0), m_mousePressed(false),
-                 m_heartSprite(m_heartTexture), m_hasHeartTexture(false) {
+                 m_heartSprite(m_heartTexture), m_hasHeartTexture(false),
+                 m_heartDropped(false), m_heartDropAtKill(1) {
 }
 
 bool Level::init(int levelNumber) {
-    std::cout << "Level::init " << levelNumber << std::endl;
     m_levelNumber = levelNumber;
     m_completed = false;
     m_gameOver = false;
     m_enemiesKilled = 0;
     m_mousePressed = false;
+    m_heartDropped = false;
     
-    // Загружаем шрифт
     if (!m_font.openFromFile("assets/fonts/Helvetica.ttc")) {
         if (!m_font.openFromFile("/Library/Fonts/Arial.ttf")) {
             std::cout << "Warning: Font not found in Level" << std::endl;
@@ -35,28 +36,28 @@ bool Level::init(int levelNumber) {
         m_hasHeartTexture = false;
     }
     
-    // Load obstacle textures once
     (void)m_bushTexture.loadFromFile(Config::BUSH_SPRITE);
     (void)m_cactusTexture.loadFromFile(Config::CACTUS_SPRITE);
     (void)m_treeTexture.loadFromFile(Config::TREE_SPRITE);
     
-    // Инициализируем игрока
-    std::cout << "Player::init" << std::endl;
     m_player.init();
     m_player.setPosition(400.0f, 300.0f);
     
-    // Генерируем уровень
-    std::cout << "Generator::generateLevel" << std::endl;
     LevelGenerator generator;
     generator.generateLevel(levelNumber, m_enemies, m_obstacles, m_bushTexture, m_cactusTexture, m_treeTexture);
     
-    m_totalEnemies = m_enemies.size();
+    m_totalEnemies = static_cast<int>(m_enemies.size());
+    
+    // Pick a random kill number at which the heart will drop (once per level)
+    if (m_totalEnemies > 0) {
+        std::mt19937 rng(std::random_device{}());
+        std::uniform_int_distribution<int> dist(1, m_totalEnemies);
+        m_heartDropAtKill = dist(rng);
+    }
     
     m_bullets.clear();
     m_heartBonuses.clear();
     
-    // Создаём текстовые элементы
-    std::cout << "Creating UI" << std::endl;
     m_levelText = std::make_unique<sf::Text>(m_font, "LEVEL " + std::to_string(levelNumber), 30);
     m_levelText->setFillColor(sf::Color::Yellow);
     m_levelText->setOutlineColor(sf::Color::Black);
@@ -71,7 +72,7 @@ bool Level::init(int levelNumber) {
     m_healthText->setPosition({20, 60});
     
     m_enemiesText = std::make_unique<sf::Text>(m_font, 
-        "ENEMIES: 0/" + std::to_string(m_totalEnemies), 24);
+        "Killed: 0/" + std::to_string(m_totalEnemies), 24);
     m_enemiesText->setFillColor(sf::Color::White);
     m_enemiesText->setOutlineColor(sf::Color::Black);
     m_enemiesText->setOutlineThickness(1);
@@ -83,83 +84,63 @@ bool Level::init(int levelNumber) {
 void Level::update(float deltaTime) {
     if (m_completed || m_gameOver) return;
     
-    // Обновляем игрока
     m_player.update(deltaTime, m_obstacles);
     
-    // Обновляем врагов
     for (auto& enemy : m_enemies) {
         enemy->update(deltaTime, m_player.getPosition(), m_obstacles);
     }
     
-    // Обновляем пули
     for (auto& bullet : m_bullets) {
         bullet->update(deltaTime);
     }
     
-    // Удаляем неактивные пули
     m_bullets.erase(
         std::remove_if(m_bullets.begin(), m_bullets.end(),
             [](const auto& bullet) { return !bullet->isActive(); }),
         m_bullets.end()
     );
     
-    // Обновляем бонусы
     updateBonuses(deltaTime);
     
-    // АВТОМАТИЧЕСКАЯ СТРЕЛЬБА ПО БЛИЖАЙШЕМУ ВРАГУ
+    // Auto-shoot at nearest enemy
     if (!m_enemies.empty()) {
         sf::Vector2f playerPos = m_player.getPosition();
         float minDist = std::numeric_limits<float>::max();
-        sf::Vector2f closestEnemyPos;
-        bool foundEnemy = false;
+        sf::Vector2f closestPos;
+        bool found = false;
         
-        // Ищем ближайшего живого врага
         for (auto& enemy : m_enemies) {
             if (!enemy->isAlive()) continue;
-            
-            sf::Vector2f enemyPos = enemy->getPosition();
-            float dx = enemyPos.x - playerPos.x;
-            float dy = enemyPos.y - playerPos.y;
-            float dist = std::sqrt(dx * dx + dy * dy);
-            
-            if (dist < minDist) {
-                minDist = dist;
-                closestEnemyPos = enemyPos;
-                foundEnemy = true;
-            }
+            sf::Vector2f ep = enemy->getPosition();
+            float d = std::sqrt((ep.x - playerPos.x) * (ep.x - playerPos.x) + 
+                               (ep.y - playerPos.y) * (ep.y - playerPos.y));
+            if (d < minDist) { minDist = d; closestPos = ep; found = true; }
         }
         
-        // Стреляем в ближайшего врага, если он найден
-        if (foundEnemy) {
-            auto bullet = m_player.shoot(closestEnemyPos);
-            if (bullet) {
-                m_bullets.push_back(std::move(bullet));
-            }
+        if (found) {
+            auto bullet = m_player.shoot(closestPos);
+            if (bullet) m_bullets.push_back(std::move(bullet));
         }
     }
     
-    // Проверяем коллизии
     checkCollisions();
     
-    // Проверяем, убиты ли все враги (не сразу, а когда вектор действительно пуст)
     if (m_enemies.empty() && m_totalEnemies > 0 && !m_completed) {
         m_completed = true;
     }
     
-    // Обновляем текстовые элементы
+    // Update HUD with correct values
     if (m_healthText) {
-        m_healthText->setString("Health: " + std::to_string(m_player.getHealth()) + 
+        m_healthText->setString("HP: " + std::to_string(m_player.getHealth()) + 
                                "/" + std::to_string(m_player.getMaxHealth()));
     }
-    
     if (m_enemiesText) {
-        m_enemiesText->setString("Enemies: " + std::to_string(m_enemiesKilled) + 
+        m_enemiesText->setString("Killed: " + std::to_string(m_enemiesKilled) + 
                                 "/" + std::to_string(m_totalEnemies));
     }
 }
 
 void Level::render(sf::RenderWindow& window) {
-    // Draw background (greenish floor) to see the bounds
     sf::RectangleShape floor({800, 600});
     floor.setFillColor(sf::Color(30, 50, 30));
     window.draw(floor);
@@ -200,6 +181,7 @@ void Level::handleEvent(const sf::Event& event, sf::RenderWindow& window) {
 }
 
 void Level::checkCollisions() {
+    // Bullet vs enemy
     for (auto& bullet : m_bullets) {
         if (!bullet->isActive()) continue;
         
@@ -213,13 +195,19 @@ void Level::checkCollisions() {
                 
                 if (!enemy->isAlive()) {
                     m_enemiesKilled++;
-                    spawnHeartBonus(enemy->getPosition());
+                    
+                    // Drop heart only once per level, at the random kill
+                    if (!m_heartDropped && m_enemiesKilled == m_heartDropAtKill) {
+                        m_heartDropped = true;
+                        spawnHeartBonus(enemy->getPosition());
+                    }
                     SoundManager::getInstance().playSound(SoundID::EnemyDeath);
                 }
                 break;
             }
         }
         
+        // Bullet vs obstacle
         for (const auto& obstacle : m_obstacles) {
             if (bullet->isActive() && bullet->getBounds().findIntersection(obstacle.bounds)) {
                 bullet->deactivate();
@@ -228,13 +216,20 @@ void Level::checkCollisions() {
         }
     }
     
+    // Enemy vs player (contact damage)
     for (auto& enemy : m_enemies) {
         if (!enemy->isAlive()) continue;
         
         if (m_player.getBounds().findIntersection(enemy->getBounds())) {
             m_player.takeDamage(1);
             enemy->takeDamage(999);
+            m_enemiesKilled++;
             SoundManager::getInstance().playSound(SoundID::Damage);
+            
+            if (!m_heartDropped && m_enemiesKilled == m_heartDropAtKill) {
+                m_heartDropped = true;
+                spawnHeartBonus(enemy->getPosition());
+            }
             
             if (m_player.getHealth() <= 0) {
                 m_gameOver = true;
@@ -243,16 +238,18 @@ void Level::checkCollisions() {
         }
     }
     
+    // Player vs heart bonus
     for (auto& bonus : m_heartBonuses) {
         if (!bonus.active) continue;
-        
-        if (m_player.getBounds().findIntersection(bonus.shape.getGlobalBounds())) {
+        sf::FloatRect bonusBounds(bonus.position - sf::Vector2f(12, 12), {24, 24});
+        if (m_player.getBounds().findIntersection(bonusBounds)) {
             m_player.heal(1);
             bonus.active = false;
             SoundManager::getInstance().playSound(SoundID::BonusPickUp);
         }
     }
     
+    // Remove dead enemies
     m_enemies.erase(
         std::remove_if(m_enemies.begin(), m_enemies.end(),
             [](const auto& enemy) { return !enemy->isAlive(); }),
@@ -264,10 +261,7 @@ void Level::updateBonuses(float deltaTime) {
     for (auto& bonus : m_heartBonuses) {
         if (bonus.active) {
             bonus.lifetime -= deltaTime;
-            if (bonus.lifetime <= 0.0f) {
-                bonus.active = false;
-            }
-            
+            if (bonus.lifetime <= 0.0f) bonus.active = false;
             float scale = 1.0f + 0.2f * std::sin(bonus.lifetime * 5.0f);
             bonus.shape.setScale({scale, scale});
         }
@@ -280,9 +274,9 @@ void Level::spawnHeartBonus(const sf::Vector2f& position) {
     bonus.active = true;
     bonus.lifetime = HeartBonus::MAX_LIFETIME;
     
-    bonus.shape.setRadius(10.0f);
+    bonus.shape.setRadius(12.0f);
     bonus.shape.setFillColor(sf::Color::Red);
-    bonus.shape.setOrigin({10.0f, 10.0f});
+    bonus.shape.setOrigin({12.0f, 12.0f});
     bonus.shape.setPosition(position);
     
     m_heartBonuses.push_back(std::move(bonus));
@@ -290,9 +284,7 @@ void Level::spawnHeartBonus(const sf::Vector2f& position) {
 
 bool Level::checkObstacleCollision(const sf::FloatRect& bounds) const {
     for (const auto& obstacle : m_obstacles) {
-        if (bounds.findIntersection(obstacle.bounds)) {
-            return true;
-        }
+        if (bounds.findIntersection(obstacle.bounds)) return true;
     }
     return false;
 }
