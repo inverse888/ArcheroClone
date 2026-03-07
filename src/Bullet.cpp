@@ -7,8 +7,9 @@ Bullet::Bullet(const sf::Vector2f& startPos, const sf::Vector2f& dir)
     
     if (m_texture.loadFromFile(Config::BULLET_SPRITE)) {
         m_sprite = std::make_unique<sf::Sprite>(m_texture);
-        sf::FloatRect bounds = m_sprite->getLocalBounds();
-        m_sprite->setOrigin({bounds.size.x / 2.0f, bounds.size.y / 2.0f});
+        m_sprite->setTextureRect(sf::IntRect({0, 0}, {32, 32}));
+        m_sprite->setOrigin({16.0f, 16.0f});
+        m_sprite->setScale({0.85f, 0.85f});
         m_sprite->setPosition(m_position);
         m_hasTexture = true;
     } else {
@@ -19,12 +20,10 @@ Bullet::Bullet(const sf::Vector2f& startPos, const sf::Vector2f& dir)
         m_hasTexture = false;
     }
 
-    // Нормализуем направление, если оно не нулевое
     float length = std::sqrt(m_direction.x * m_direction.x + m_direction.y * m_direction.y);
     if (length > 0.0f) {
         m_direction /= length;
     } else {
-        // Если направление нулевое, стреляем вверх по умолчанию
         m_direction = {0.0f, -1.0f};
     }
 }
@@ -36,7 +35,6 @@ void Bullet::update(float deltaTime) {
     if (m_hasTexture && m_sprite) m_sprite->setPosition(m_position);
     else m_shape.setPosition(m_position);
     
-    // Деактивируем, если вылетела за пределы экрана
     if (m_position.x < 0 || m_position.x > 800 || 
         m_position.y < 0 || m_position.y > 600) {
         m_active = false;

@@ -4,7 +4,6 @@
 #include <string>
 
 namespace Config {
-    // Пути к ресурсам (относительные)
     const std::string PLAYER_IDLE = "assets/craftpix-net-419402-free-base-4-direction-female-character-pixel-art/PNG/Sword/Without_shadow/Sword_Idle_without_shadow.png";
     const std::string PLAYER_RUN = "assets/craftpix-net-419402-free-base-4-direction-female-character-pixel-art/PNG/Sword/Without_shadow/Sword_Run_without_shadow.png";
     const std::string PLAYER_ATTACK = "assets/craftpix-net-419402-free-base-4-direction-female-character-pixel-art/PNG/Sword/Without_shadow/Sword_attack_without_shadow.png";
@@ -26,10 +25,10 @@ namespace Config {
     const std::string LAVA_BUSH_SPRITE = "assets/craftpix-net-141354-free-top-down-bushes-pixel-art/PNG/Assets/Autumn_bush1.png";
     const std::string LAVA_DECOR_SPRITE = "assets/craftpix-net-141354-free-top-down-bushes-pixel-art/PNG/Assets/Bush_red_flowers1.png";
     const std::string LAVA_TREE_SPRITE = "assets/craftpix-net-141354-free-top-down-bushes-pixel-art/PNG/Assets/Burned_tree1.png";
-    const std::string BULLET_SPRITE = "assets/images/bullet.png";
+    const std::string WALL_SPRITE = "assets/craftpix-net-665895-free-pixel-dungeon-props-and-objects-asset-pack/PNG/Cannon_main.png";
+    const std::string BULLET_SPRITE = "assets/craftpix-net-665895-free-pixel-dungeon-props-and-objects-asset-pack/PNG/Arrow.png";
     const std::string HEART_SPRITE = "assets/pictures/heart.png";
-    
-    // Аудио
+
     const std::string MUSIC_MAIN = "assets/music/background.wav";
     const std::string SOUND_HIT = "assets/sounds/hit.wav";
     const std::string SOUND_DAMAGE = "assets/sounds/damage.wav";
@@ -38,7 +37,6 @@ namespace Config {
     const std::string SOUND_VICTORY = "assets/sounds/victory.wav";
     const std::string SOUND_BONUS_PICKUP = "assets/sounds/bonus_pickup.wav";
     
-    // Шрифт
     const std::string FONT_MAIN = "assets/fonts/Helvetica.ttc";
 }
 

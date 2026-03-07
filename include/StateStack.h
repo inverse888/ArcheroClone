@@ -20,7 +20,7 @@ public:
     template <typename T>
     void registerState(States::ID stateID);
     
-    // Перегрузка для состояний, требующих дополнительных параметров (например, номер уровня)
+    
     template <typename T, typename Param>
     void registerState(States::ID stateID, Param param);
 

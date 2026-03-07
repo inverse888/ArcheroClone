@@ -15,7 +15,7 @@ struct Obstacle {
 };
 
 struct HeartBonus {
-    sf::CircleShape shape; // Fallback or placeholder for texture
+    sf::CircleShape shape;
     sf::Vector2f position;
     bool active;
     float lifetime;
@@ -37,18 +37,18 @@ private:
     int m_enemiesKilled;
     int m_totalEnemies;
     
-    bool m_heartDropped; // Only one heart drop per level
-    int m_heartDropAtKill; // Which kill number triggers the heart
+    bool m_heartDropped;
+    int m_heartDropAtKill;
     
     sf::Font m_font;
     sf::Texture m_heartTexture;
     sf::Sprite m_heartSprite;
     bool m_hasHeartTexture;
     
-    // Stable textures for obstacles
     sf::Texture m_bushTexture;
     sf::Texture m_cactusTexture;
     sf::Texture m_treeTexture;
+    sf::Texture m_wallTexture;
     
     std::unique_ptr<sf::Text> m_levelText;
     std::unique_ptr<sf::Text> m_healthText;

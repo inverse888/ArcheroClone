@@ -22,8 +22,8 @@ void StateStack::update(float dt)
 
 void StateStack::draw()
 {
-    // Draw from the bottom up to the top, but skip if states above are not transparent
-    // To do this properly, we find the first non-transparent state from top to bottom
+    
+    
     int firstVisibleState = m_stack.size() - 1;
     for (; firstVisibleState > 0; --firstVisibleState) {
         if (!m_stack[firstVisibleState]->isTransparent()) {

@@ -33,11 +33,11 @@ bool Player::init() {
     const int FH = 64;
     
     m_sprite = std::make_unique<sf::Sprite>(m_idleTexture);
-    // SET TEXTURE RECT TO ONE FRAME *BEFORE* COMPUTING ORIGIN
+    
     m_sprite->setTextureRect(sf::IntRect({0, 0}, {FW, FH}));
     m_sprite->setOrigin({FW / 2.0f, FH / 2.0f});
     
-    // Sprite sheet rows: 0=Down, 1=Up, 2=Right, 3=Left
+    
     for (int row = 0; row < 4; ++row) {
         PlayerDirection pDir;
         if (row == 0)      pDir = PlayerDirection::Down;
@@ -130,7 +130,7 @@ void Player::update(float deltaTime, const std::vector<Obstacle>& obstacles) {
     if (!blocked) {
         m_position = nextPos;
     } else {
-        // Slide along X
+        
         float nx = m_position.x + input.x * m_speed * deltaTime;
         nx = std::max(MARGIN, std::min(nx, 800.0f - MARGIN));
         sf::FloatRect bx(sf::Vector2f(nx - HALF, m_position.y - HALF), {HALF * 2, HALF * 2});
@@ -138,7 +138,7 @@ void Player::update(float deltaTime, const std::vector<Obstacle>& obstacles) {
         for (const auto& obs : obstacles) if (bx.findIntersection(obs.bounds)) { bxHit = true; break; }
         if (!bxHit) m_position.x = nx;
 
-        // Slide along Y
+        
         float ny = m_position.y + input.y * m_speed * deltaTime;
         ny = std::max(MARGIN, std::min(ny, 600.0f - MARGIN));
         sf::FloatRect by(sf::Vector2f(m_position.x - HALF, ny - HALF), {HALF * 2, HALF * 2});

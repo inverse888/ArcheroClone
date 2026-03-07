@@ -45,9 +45,9 @@ bool VictoryState::handleEvent(const sf::Event& event) {
             
             if (GameState::selectedLevel < 3 && keyEvent->scancode == sf::Keyboard::Scancode::Enter) {
                 GameState::selectedLevel++;
-                requestStackPop(); // Убираем VictoryState
-                requestStackPop(); // Убираем текущий GameState
-                requestStackPush(States::Game); // Пушим новый GameState
+                requestStackPop(); 
+                requestStackPop(); 
+                requestStackPush(States::Game); 
             } else {
                 requestStateClear();
                 requestStackPush(States::MainMenu);

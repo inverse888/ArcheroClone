@@ -11,14 +11,51 @@ LevelGenerator::LevelGenerator() : m_rng(std::random_device{}()) {
 void LevelGenerator::generateLevel(int levelNumber, 
                                  std::vector<std::unique_ptr<Enemy>>& enemies,
                                  std::vector<Obstacle>& obstacles,
-                                 const sf::Texture& bush, const sf::Texture& cactus, const sf::Texture& tree) {
+                                 const sf::Texture& bush,
+                                 const sf::Texture& cactus,
+                                 const sf::Texture& tree,
+                                 const sf::Texture& wall) {
     enemies.clear();
     obstacles.clear();
     
     RoomConfig config = getConfigForLevel(levelNumber);
     const sf::Texture* textures[3] = { &bush, &cactus, &tree };
+    std::uniform_real_distribution<float> wallChance(0.0f, 1.0f);
+    float lineWallChance = 0.30f;
+    float scatteredWallChance = 0.20f;
+    if (levelNumber == 2) {
+        lineWallChance = 0.45f;
+        scatteredWallChance = 0.32f;
+    } else if (levelNumber >= 3) {
+        lineWallChance = 0.58f;
+        scatteredWallChance = 0.42f;
+    }
+
+    auto makeObstacle = [&](const sf::Vector2f& pos, bool solidWall, int texIndex) {
+        Obstacle obs;
+        obs.position = pos;
+
+        if (solidWall) {
+            obs.sprite = std::make_shared<sf::Sprite>(wall);
+            obs.sprite->setTextureRect(sf::IntRect({0, 0}, {160, 160}));
+            obs.sprite->setScale({0.35f, 0.35f});
+            sf::FloatRect lb = obs.sprite->getLocalBounds();
+            obs.sprite->setOrigin({lb.size.x / 2.0f, lb.size.y / 2.0f});
+            obs.sprite->setPosition(pos);
+            obs.bounds = sf::FloatRect(pos - sf::Vector2f(20.0f, 20.0f), {40.0f, 40.0f});
+        } else {
+            obs.sprite = std::make_shared<sf::Sprite>(*textures[texIndex]);
+            sf::FloatRect lb = obs.sprite->getLocalBounds();
+            obs.sprite->setOrigin({lb.size.x / 2.0f, lb.size.y / 2.0f});
+            obs.sprite->setPosition(pos);
+            obs.bounds = obs.sprite->getGlobalBounds();
+            obs.bounds = sf::FloatRect(obs.bounds.position + sf::Vector2f(8, 8), obs.bounds.size - sf::Vector2f(16, 16));
+        }
+
+        obstacles.push_back(obs);
+    };
     
-    // --- Generate LINE formations (2-4 lines per level) ---
+    
     std::uniform_int_distribution<int> numLinesDist(2, 3 + levelNumber);
     int numLines = numLinesDist(m_rng);
     
@@ -26,13 +63,14 @@ void LevelGenerator::generateLevel(int levelNumber,
         std::uniform_int_distribution<int> lengthDist(5, 9);
         int lineLength = lengthDist(m_rng);
         
-        std::uniform_int_distribution<int> dirDist(0, 1); // 0=horizontal, 1=vertical
+        std::uniform_int_distribution<int> dirDist(0, 1); 
         bool horizontal = dirDist(m_rng) == 0;
         
         std::uniform_int_distribution<int> texIdx(0, 2);
         int tex = texIdx(m_rng);
+        bool solidWallLine = wallChance(m_rng) < lineWallChance;
         
-        // Pick a start position that keeps the line on screen
+        
         float startX, startY;
         float spacing = 40.0f;
         if (horizontal) {
@@ -51,7 +89,7 @@ void LevelGenerator::generateLevel(int levelNumber,
             startY = yd(m_rng);
         }
         
-        // Don't place lines too close to player spawn
+        
         float distToPlayer = std::sqrt((startX - 400.0f) * (startX - 400.0f) + (startY - 300.0f) * (startY - 300.0f));
         if (distToPlayer < 80.0f) continue;
         
@@ -60,26 +98,18 @@ void LevelGenerator::generateLevel(int levelNumber,
             if (horizontal) pos = {startX + i * spacing, startY};
             else pos = {startX, startY + i * spacing};
             
-            // Skip if too close to player spawn
+            
             float dp = std::sqrt((pos.x - 400.0f) * (pos.x - 400.0f) + (pos.y - 300.0f) * (pos.y - 300.0f));
             if (dp < 70.0f) continue;
             
-            // Skip if off screen
+            
             if (pos.x < 20 || pos.x > 780 || pos.y < 20 || pos.y > 580) continue;
             
-            Obstacle obs;
-            obs.position = pos;
-            obs.sprite = std::make_shared<sf::Sprite>(*textures[tex]);
-            sf::FloatRect lb = obs.sprite->getLocalBounds();
-            obs.sprite->setOrigin({lb.size.x / 2.0f, lb.size.y / 2.0f});
-            obs.sprite->setPosition(pos);
-            obs.bounds = obs.sprite->getGlobalBounds();
-            obs.bounds = sf::FloatRect(obs.bounds.position + sf::Vector2f(8, 8), obs.bounds.size - sf::Vector2f(16, 16));
-            obstacles.push_back(obs);
+            makeObstacle(pos, solidWallLine, tex);
         }
     }
     
-    // --- Generate scattered obstacles ---
+    
     std::uniform_int_distribution<int> numScatteredDist(config.minObstacles, config.maxObstacles);
     int numScattered = numScatteredDist(m_rng);
     std::uniform_int_distribution<int> texRand(0, 2);
@@ -95,18 +125,10 @@ void LevelGenerator::generateLevel(int levelNumber,
         }
         if (!valid) continue;
         
-        Obstacle obs;
-        obs.position = pos;
-        obs.sprite = std::make_shared<sf::Sprite>(*textures[texRand(m_rng)]);
-        sf::FloatRect lb = obs.sprite->getLocalBounds();
-        obs.sprite->setOrigin({lb.size.x / 2.0f, lb.size.y / 2.0f});
-        obs.sprite->setPosition(pos);
-        obs.bounds = obs.sprite->getGlobalBounds();
-        obs.bounds = sf::FloatRect(obs.bounds.position + sf::Vector2f(8, 8), obs.bounds.size - sf::Vector2f(16, 16));
-        obstacles.push_back(obs);
+        makeObstacle(pos, wallChance(m_rng) < scatteredWallChance, texRand(m_rng));
     }
     
-    // --- Generate enemies with level scaling ---
+    
     std::uniform_int_distribution<int> numEnemiesDist(config.minEnemies, config.maxEnemies);
     int numEnemies = numEnemiesDist(m_rng);
     int fastEnemiesCount = 0;
@@ -161,9 +183,9 @@ RoomConfig LevelGenerator::getConfigForLevel(int levelNumber) {
     config.minObstacles = 6 + levelNumber;
     config.maxObstacles = 10 + levelNumber * 2;
     
-    // Level 1: only SIMPLE (Orc1)
-    // Level 2: SIMPLE + FAST (Orc2)
-    // Level 3: SIMPLE + FAST + TANK (Orc3)
+    
+    
+    
     config.possibleEnemies.push_back(EnemyType::SIMPLE);
     if (levelNumber >= 2) config.possibleEnemies.push_back(EnemyType::FAST);
     if (levelNumber >= 3) config.possibleEnemies.push_back(EnemyType::TANK);

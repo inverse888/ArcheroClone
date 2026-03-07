@@ -20,7 +20,7 @@ GameOverState::GameOverState(State::Context context)
 void GameOverState::draw() {
     sf::RenderWindow& window = *getContext().window;
     
-    // Затемнение фона
+    
     sf::RectangleShape overlay({800, 600});
     overlay.setFillColor(sf::Color(0, 0, 0, 150));
     window.draw(overlay);
@@ -30,7 +30,7 @@ void GameOverState::draw() {
 }
 
 bool GameOverState::update(float dt) {
-    return false; // Останавливаем обновление состояний под нами
+    return false; 
 }
 
 bool GameOverState::handleEvent(const sf::Event& event) {

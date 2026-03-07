@@ -12,14 +12,14 @@ Game::Game()
 : m_window(sf::VideoMode::getDesktopMode(), "Archero Clone", sf::State::Fullscreen)
 , m_stateStack(State::Context(m_window, m_font, m_stateStack))
 {
-    // Keep game world coordinates stable while running fullscreen.
+    
     sf::View view(sf::FloatRect({0, 0}, {800, 600}));
     m_window.setView(view);
     m_window.setFramerateLimit(60);
 }
 
 bool Game::init() {
-    // Загружаем шрифт
+    
     if (!m_font.openFromFile("assets/fonts/Helvetica.ttc")) {
         if (!m_font.openFromFile("/Library/Fonts/Arial.ttf")) {
             std::cout << "Error: Font not found" << std::endl;
@@ -47,7 +47,7 @@ void Game::run() {
     sf::Clock clock;
     while (m_window.isOpen()) {
         float dt = clock.restart().asSeconds();
-        if (dt > 0.1f) dt = 0.1f; // Cap delta time
+        if (dt > 0.1f) dt = 0.1f; 
         
         processInput();
         update(dt);

@@ -32,7 +32,7 @@ private:
     std::unique_ptr<sf::Sprite> m_sprite;
     sf::Texture m_idleTexture;
     sf::Texture m_runTexture;
-    sf::CircleShape m_shape; // Fallback
+    sf::CircleShape m_shape; 
     bool m_hasTexture;
     
     sf::Vector2f m_position;

@@ -49,7 +49,7 @@ private:
     bool m_leftPressed;
     bool m_rightPressed;
     
-    float m_stateTimer; // Для временных состояний (Attack, Hurt)
+    float m_stateTimer; 
     
 public:
     Player();

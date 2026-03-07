@@ -27,7 +27,10 @@ public:
     void generateLevel(int levelNumber, 
                       std::vector<std::unique_ptr<Enemy>>& enemies,
                       std::vector<Obstacle>& obstacles,
-                      const sf::Texture& bush, const sf::Texture& cactus, const sf::Texture& tree);
+                      const sf::Texture& bush,
+                      const sf::Texture& cactus,
+                      const sf::Texture& tree,
+                      const sf::Texture& wall);
     
 private:
     RoomConfig getConfigForLevel(int levelNumber);

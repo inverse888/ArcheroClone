@@ -6,21 +6,21 @@
 
 Enemy::Enemy(EnemyType type, int levelNumber) : m_type(type), m_hasTexture(false), m_health(5), m_maxHealth(5), m_speed(80.0f),
                                m_currentDirection(EnemyDirection::Down), m_currentState(EnemyState::Idle) {
-    // Level scaling: each level adds 20% speed and HP
+    
     float levelScale = 1.0f + (levelNumber - 1) * 0.25f;
     
     switch (type) {
-        case EnemyType::SIMPLE: // Orc1 — weakest
+        case EnemyType::SIMPLE: 
             m_speed = 70.0f * levelScale;
             m_health = static_cast<int>(3 * levelScale);
             m_maxHealth = m_health;
             break;
-        case EnemyType::FAST: // Orc2 — fast
-            m_speed = 140.0f * levelScale;
+        case EnemyType::FAST: 
+            m_speed = 140.0f * 0.85f * levelScale;
             m_health = 2;
             m_maxHealth = m_health;
             break;
-        case EnemyType::TANK: // Orc3 — tank, slow but beefy
+        case EnemyType::TANK: 
             m_speed = 40.0f * levelScale;
             m_health = static_cast<int>(10 * levelScale);
             m_maxHealth = m_health;
@@ -52,12 +52,12 @@ void Enemy::init(const sf::Vector2f& startPos) {
         const int FH = 64;
         
         m_sprite = std::make_unique<sf::Sprite>(m_idleTexture);
-        // SET TEXTURE RECT TO ONE FRAME *BEFORE* COMPUTING ORIGIN
+        
         m_sprite->setTextureRect(sf::IntRect({0, 0}, {FW, FH}));
         m_sprite->setOrigin({FW / 2.0f, FH / 2.0f});
         m_sprite->setPosition(m_position);
         
-        // Rows: 0=Down, 1=Up, 2=Right, 3=Left (same as player pack)
+        
         for (int row = 0; row < 4; ++row) {
             EnemyDirection eDir;
             if (row == 0)      eDir = EnemyDirection::Down;
@@ -157,7 +157,7 @@ void Enemy::moveTowards(float deltaTime, const sf::Vector2f& target, const std::
                 moved = true;
             }
 
-            // If blocked on both axes, try sidestep to avoid getting stuck in clusters.
+            
             if (!moved) {
                 sf::Vector2f sideA(-direction.y, direction.x);
                 sf::Vector2f sideB(direction.y, -direction.x);

@@ -3,6 +3,7 @@
 #include "SoundManager.h"
 #include "Config.h"
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <iostream>
 #include <limits>
@@ -29,11 +30,11 @@ bool Level::init(int levelNumber) {
         }
     }
 
-    if (m_heartTexture.loadFromFile(Config::HEART_SPRITE)) {
+    if (m_heartTexture.loadFromFile(Config::HEART_SPRITE) || m_heartTexture.loadFromFile("assets/images/heart.png")) {
         m_heartSprite.setTexture(m_heartTexture);
         sf::FloatRect bounds = m_heartSprite.getLocalBounds();
         m_heartSprite.setOrigin({bounds.size.x / 2.0f, bounds.size.y / 2.0f});
-        m_heartSprite.setScale({0.7f, 0.7f});
+        m_heartSprite.setScale({2.2f, 2.2f});
         m_hasHeartTexture = true;
     } else {
         m_hasHeartTexture = false;
@@ -55,16 +56,17 @@ bool Level::init(int levelNumber) {
     (void)m_bushTexture.loadFromFile(bushPath);
     (void)m_cactusTexture.loadFromFile(cactusPath);
     (void)m_treeTexture.loadFromFile(treePath);
+    (void)m_wallTexture.loadFromFile(Config::WALL_SPRITE);
     
     m_player.init();
     m_player.setPosition(400.0f, 300.0f);
     
     LevelGenerator generator;
-    generator.generateLevel(levelNumber, m_enemies, m_obstacles, m_bushTexture, m_cactusTexture, m_treeTexture);
+    generator.generateLevel(levelNumber, m_enemies, m_obstacles, m_bushTexture, m_cactusTexture, m_treeTexture, m_wallTexture);
     
     m_totalEnemies = static_cast<int>(m_enemies.size());
     
-    // Heart drops exactly once per level on 3rd or 4th kill
+    
     std::mt19937 rng(std::random_device{}());
     std::uniform_int_distribution<int> dropKillDist(3, 4);
     m_heartDropAtKill = std::max(1, std::min(m_totalEnemies, dropKillDist(rng)));
@@ -120,7 +122,7 @@ void Level::update(float deltaTime) {
         m_contactDamageCooldown -= deltaTime;
     }
     
-    // Auto-shoot at nearest enemy
+    
     if (!m_enemies.empty()) {
         sf::Vector2f playerPos = m_player.getPosition();
         float minDist = std::numeric_limits<float>::max();
@@ -147,7 +149,7 @@ void Level::update(float deltaTime) {
         m_completed = true;
     }
     
-    // Update HUD with correct values
+    
     if (m_healthText) {
         m_healthText->setString("HP: " + std::to_string(m_player.getHealth()) + 
                                "/" + std::to_string(m_player.getMaxHealth()));
@@ -177,7 +179,7 @@ void Level::render(sf::RenderWindow& window) {
         if (bonus.active) {
             if (m_hasHeartTexture) {
                 m_heartSprite.setPosition(bonus.position);
-                m_heartSprite.setScale(bonus.shape.getScale());
+                m_heartSprite.setScale(bonus.shape.getScale() * 2.2f);
                 window.draw(m_heartSprite);
             } else {
                 window.draw(bonus.shape);
@@ -205,7 +207,7 @@ void Level::handleEvent(const sf::Event& event, sf::RenderWindow& window) {
 }
 
 void Level::checkCollisions() {
-    // Bullet vs enemy
+    
     for (auto& bullet : m_bullets) {
         if (!bullet->isActive()) continue;
         
@@ -220,7 +222,7 @@ void Level::checkCollisions() {
                 if (!enemy->isAlive()) {
                     m_enemiesKilled++;
                     
-                    // Drop heart only once per level, at the random kill
+                    
                     if (!m_heartDropped && m_enemiesKilled >= m_heartDropAtKill) {
                         m_heartDropped = true;
                         spawnHeartBonus(enemy->getPosition());
@@ -231,7 +233,7 @@ void Level::checkCollisions() {
             }
         }
         
-        // Bullet vs obstacle
+        
         for (const auto& obstacle : m_obstacles) {
             if (bullet->isActive() && bullet->getBounds().findIntersection(obstacle.bounds)) {
                 bullet->deactivate();
@@ -240,7 +242,7 @@ void Level::checkCollisions() {
         }
     }
     
-    // Enemy vs player (contact damage, enemy survives)
+    
     bool touchingEnemy = false;
     for (const auto& enemy : m_enemies) {
         if (!enemy->isAlive()) continue;
@@ -260,7 +262,7 @@ void Level::checkCollisions() {
         }
     }
     
-    // Player vs heart bonus
+    
     for (auto& bonus : m_heartBonuses) {
         if (!bonus.active) continue;
         sf::FloatRect bonusBounds(bonus.position - sf::Vector2f(18, 18), {36, 36});
@@ -271,12 +273,17 @@ void Level::checkCollisions() {
         }
     }
     
-    // Remove dead enemies
+    
     m_enemies.erase(
         std::remove_if(m_enemies.begin(), m_enemies.end(),
             [](const auto& enemy) { return !enemy->isAlive(); }),
         m_enemies.end()
     );
+
+    if (!m_heartDropped && m_enemiesKilled > 0 && (m_enemiesKilled >= m_heartDropAtKill || m_enemies.size() <= 1)) {
+        m_heartDropped = true;
+        spawnHeartBonus(m_player.getPosition() + sf::Vector2f(28.0f, 0.0f));
+    }
 }
 
 void Level::updateBonuses(float deltaTime) {
@@ -333,12 +340,33 @@ void Level::resolveEnemyOverlap() {
 void Level::spawnHeartBonus(const sf::Vector2f& position) {
     HeartBonus bonus;
     bonus.position = position;
+    const std::array<sf::Vector2f, 9> offsets = {
+        sf::Vector2f{0.0f, 0.0f},
+        sf::Vector2f{24.0f, 0.0f},
+        sf::Vector2f{-24.0f, 0.0f},
+        sf::Vector2f{0.0f, 24.0f},
+        sf::Vector2f{0.0f, -24.0f},
+        sf::Vector2f{24.0f, 24.0f},
+        sf::Vector2f{-24.0f, 24.0f},
+        sf::Vector2f{24.0f, -24.0f},
+        sf::Vector2f{-24.0f, -24.0f}
+    };
+    for (const auto& offset : offsets) {
+        sf::Vector2f candidate = position + offset;
+        candidate.x = std::clamp(candidate.x, 24.0f, 776.0f);
+        candidate.y = std::clamp(candidate.y, 24.0f, 576.0f);
+        sf::FloatRect candidateBounds(candidate - sf::Vector2f(16.0f, 16.0f), {32.0f, 32.0f});
+        if (!checkObstacleCollision(candidateBounds)) {
+            bonus.position = candidate;
+            break;
+        }
+    }
     bonus.active = true;
     bonus.lifetime = HeartBonus::MAX_LIFETIME;
     
-    bonus.shape.setRadius(14.0f);
+    bonus.shape.setRadius(16.0f);
     bonus.shape.setFillColor(sf::Color::Red);
-    bonus.shape.setOrigin({14.0f, 14.0f});
+    bonus.shape.setOrigin({16.0f, 16.0f});
     bonus.shape.setPosition(position);
     
     m_heartBonuses.push_back(std::move(bonus));

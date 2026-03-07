@@ -98,7 +98,7 @@ void Menu::update() {
 }
 
 void Menu::render(sf::RenderWindow& window) {
-    // Рисуем заголовок или фон если нужно
+    
     sf::Text title(m_font, "ARCHERO CLONE", 70);
     title.setFillColor(sf::Color::Red);
     sf::FloatRect b = title.getLocalBounds();
