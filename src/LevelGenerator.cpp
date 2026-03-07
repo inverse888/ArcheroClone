@@ -3,6 +3,7 @@
 #include <random>
 #include <iostream>
 #include <cmath>
+#include <algorithm>
 
 LevelGenerator::LevelGenerator() : m_rng(std::random_device{}()) {
 }
@@ -108,24 +109,47 @@ void LevelGenerator::generateLevel(int levelNumber,
     // --- Generate enemies with level scaling ---
     std::uniform_int_distribution<int> numEnemiesDist(config.minEnemies, config.maxEnemies);
     int numEnemies = numEnemiesDist(m_rng);
-    std::uniform_int_distribution<int> enemyTypeIdx(0, static_cast<int>(config.possibleEnemies.size()) - 1);
+    int fastEnemiesCount = 0;
     
     for (int i = 0; i < numEnemies; ++i) {
+        std::vector<EnemyType> spawnPool;
+        spawnPool.reserve(config.possibleEnemies.size());
+        for (EnemyType t : config.possibleEnemies) {
+            if (t == EnemyType::FAST && fastEnemiesCount >= 3) continue;
+            spawnPool.push_back(t);
+        }
+        if (spawnPool.empty()) {
+            spawnPool.push_back(EnemyType::SIMPLE);
+        }
+        std::uniform_int_distribution<int> enemyTypeIdx(0, static_cast<int>(spawnPool.size()) - 1);
+        EnemyType chosenType = spawnPool[enemyTypeIdx(m_rng)];
+
         sf::Vector2f pos;
         bool valid = false;
         int attempts = 0;
         while (!valid && attempts < 100) {
             pos = getRandomPosition(50, 750, 50, 550);
             float dp = std::sqrt((pos.x - 400.0f) * (pos.x - 400.0f) + (pos.y - 300.0f) * (pos.y - 300.0f));
-            if (dp > 150.0f && isPositionValid(pos, obstacles)) valid = true;
+            if (dp > 150.0f && isPositionValid(pos, obstacles)) {
+                valid = true;
+                for (const auto& existing : enemies) {
+                    sf::Vector2f d = existing->getPosition() - pos;
+                    if (std::sqrt(d.x * d.x + d.y * d.y) < 45.0f) {
+                        valid = false;
+                        break;
+                    }
+                }
+            }
             attempts++;
         }
         
         if (valid) {
-            EnemyType type = config.possibleEnemies[enemyTypeIdx(m_rng)];
-            auto enemy = std::make_unique<Enemy>(type, levelNumber);
+            auto enemy = std::make_unique<Enemy>(chosenType, levelNumber);
             enemy->init(pos);
             enemies.push_back(std::move(enemy));
+            if (chosenType == EnemyType::FAST) {
+                ++fastEnemiesCount;
+            }
         }
     }
 }

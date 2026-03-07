@@ -56,6 +56,7 @@ public:
     
     sf::FloatRect getBounds() const;
     const sf::Vector2f& getPosition() const { return m_position; }
+    void setPosition(const sf::Vector2f& position);
     int getHealth() const { return m_health; }
     bool isAlive() const { return m_health > 0; }
     EnemyType getType() const { return m_type; }

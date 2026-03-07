@@ -9,10 +9,10 @@
 #include <iostream>
 
 Game::Game() 
-: m_window(sf::VideoMode({800u, 600u}), "Archero Clone")
+: m_window(sf::VideoMode::getDesktopMode(), "Archero Clone", sf::State::Fullscreen)
 , m_stateStack(State::Context(m_window, m_font, m_stateStack))
 {
-    // Explicitly set view for Mac Retina displays
+    // Keep game world coordinates stable while running fullscreen.
     sf::View view(sf::FloatRect({0, 0}, {800, 600}));
     m_window.setView(view);
     m_window.setFramerateLimit(60);

@@ -55,6 +55,7 @@ private:
     std::unique_ptr<sf::Text> m_enemiesText;
     
     bool m_mousePressed;
+    float m_contactDamageCooldown;
     
 public:
     Level();
@@ -72,6 +73,7 @@ public:
 private:
     void checkCollisions();
     void updateBonuses(float deltaTime);
+    void resolveEnemyOverlap();
     void spawnHeartBonus(const sf::Vector2f& position);
     
     bool checkObstacleCollision(const sf::FloatRect& bounds) const;

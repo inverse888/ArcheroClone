@@ -17,7 +17,7 @@ Enemy::Enemy(EnemyType type, int levelNumber) : m_type(type), m_hasTexture(false
             break;
         case EnemyType::FAST: // Orc2 — fast
             m_speed = 140.0f * levelScale;
-            m_health = static_cast<int>(3 * levelScale);
+            m_health = 2;
             m_maxHealth = m_health;
             break;
         case EnemyType::TANK: // Orc3 — tank, slow but beefy
@@ -138,17 +138,43 @@ void Enemy::moveTowards(float deltaTime, const sf::Vector2f& target, const std::
         if (!collision) {
             m_position = nextPos;
         } else {
+            bool moved = false;
             float nx = m_position.x + direction.x * m_speed * deltaTime;
             sf::FloatRect bx(sf::Vector2f(nx - HALF, m_position.y - HALF), {HALF * 2, HALF * 2});
             bool collX = false;
             for (const auto& obs : obstacles) if (bx.findIntersection(obs.bounds)) { collX = true; break; }
-            if (!collX) m_position.x = nx;
+            if (!collX) {
+                m_position.x = nx;
+                moved = true;
+            }
 
             float ny = m_position.y + direction.y * m_speed * deltaTime;
             sf::FloatRect by(sf::Vector2f(m_position.x - HALF, ny - HALF), {HALF * 2, HALF * 2});
             bool collY = false;
             for (const auto& obs : obstacles) if (by.findIntersection(obs.bounds)) { collY = true; break; }
-            if (!collY) m_position.y = ny;
+            if (!collY) {
+                m_position.y = ny;
+                moved = true;
+            }
+
+            // If blocked on both axes, try sidestep to avoid getting stuck in clusters.
+            if (!moved) {
+                sf::Vector2f sideA(-direction.y, direction.x);
+                sf::Vector2f sideB(direction.y, -direction.x);
+                float sideStep = m_speed * deltaTime * 0.8f;
+
+                auto tryMove = [&](const sf::Vector2f& dir) {
+                    sf::Vector2f cand = m_position + dir * sideStep;
+                    sf::FloatRect cb(cand - sf::Vector2f(HALF, HALF), {HALF * 2, HALF * 2});
+                    for (const auto& obs : obstacles) {
+                        if (cb.findIntersection(obs.bounds)) return false;
+                    }
+                    m_position = cand;
+                    return true;
+                };
+
+                (void)(tryMove(sideA) || tryMove(sideB));
+            }
         }
     } else {
         m_currentState = EnemyState::Idle;
@@ -168,4 +194,13 @@ void Enemy::takeDamage(int damage) {
 
 sf::FloatRect Enemy::getBounds() const {
     return sf::FloatRect(m_position - sf::Vector2f(15, 15), {30, 30});
+}
+
+void Enemy::setPosition(const sf::Vector2f& position) {
+    m_position = position;
+    if (m_hasTexture && m_sprite) {
+        m_sprite->setPosition(m_position);
+    } else {
+        m_shape.setPosition(m_position);
+    }
 }
