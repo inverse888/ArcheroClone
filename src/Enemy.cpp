@@ -10,17 +10,17 @@ Enemy::Enemy(EnemyType type, int levelNumber) : m_type(type), m_hasTexture(false
     float levelScale = 1.0f + (levelNumber - 1) * 0.25f;
     
     switch (type) {
-        case EnemyType::SIMPLE: // Vampires1 — weakest
+        case EnemyType::SIMPLE: // Orc1 — weakest
             m_speed = 70.0f * levelScale;
             m_health = static_cast<int>(3 * levelScale);
             m_maxHealth = m_health;
             break;
-        case EnemyType::FAST: // Vampires2 — fast
+        case EnemyType::FAST: // Orc2 — fast
             m_speed = 140.0f * levelScale;
             m_health = static_cast<int>(3 * levelScale);
             m_maxHealth = m_health;
             break;
-        case EnemyType::TANK: // Vampires3 — tank, slow but beefy
+        case EnemyType::TANK: // Orc3 — tank, slow but beefy
             m_speed = 40.0f * levelScale;
             m_health = static_cast<int>(10 * levelScale);
             m_maxHealth = m_health;

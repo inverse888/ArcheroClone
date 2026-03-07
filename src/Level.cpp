@@ -5,7 +5,6 @@
 #include <cmath>
 #include <iostream>
 #include <limits>
-#include <random>
 
 Level::Level() : m_levelNumber(1), m_completed(false), m_gameOver(false), 
                  m_enemiesKilled(0), m_totalEnemies(0), m_mousePressed(false),
@@ -48,12 +47,8 @@ bool Level::init(int levelNumber) {
     
     m_totalEnemies = static_cast<int>(m_enemies.size());
     
-    // Pick a random kill number at which the heart will drop (once per level)
-    if (m_totalEnemies > 0) {
-        std::mt19937 rng(std::random_device{}());
-        std::uniform_int_distribution<int> dist(1, m_totalEnemies);
-        m_heartDropAtKill = dist(rng);
-    }
+    // Heart drops exactly once per level at the first enemy kill
+    m_heartDropAtKill = 1;
     
     m_bullets.clear();
     m_heartBonuses.clear();

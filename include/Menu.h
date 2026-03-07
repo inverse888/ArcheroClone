@@ -7,10 +7,17 @@
 
 class Menu {
 private:
+    enum class Mode {
+        Main,
+        LevelSelect
+    };
+
     sf::Font m_font;
     std::vector<sf::Text> m_buttons;
     std::vector<std::function<void()>> m_actions;
     int m_selectedButton;
+    Mode m_mode;
+    bool m_soundEnabled;
     
 public:
     Menu();
@@ -21,12 +28,14 @@ public:
     void render(sf::RenderWindow& window);
     void handleEvent(const sf::Event& event, sf::RenderWindow& window);
     
-    void createMainMenu(std::function<void()> onPlay, std::function<void()> onExit);
+    void createMainMenu(std::function<void()> onPlay,
+                        std::function<void()> onToggleSound,
+                        std::function<void()> onExit,
+                        bool soundEnabled);
     void createLevelSelectMenu(std::function<void(int)> onLevelSelected, std::function<void()> onBack);
     
-    void setSoundToggleCallback(std::function<void()> callback);
-    
 private:
+    void updateMainMenuSoundLabel();
     void moveUp();
     void moveDown();
     void activate();

@@ -2,6 +2,7 @@
 #define SOUND_MANAGER_H
 
 #include <SFML/Audio.hpp>
+#include <deque>
 #include <map>
 #include <string>
 
@@ -30,9 +31,11 @@ public:
 
 private:
     SoundManager();
+    void cleanupFinishedSounds();
     bool m_muted;
+    bool m_musicLoaded;
     std::map<SoundID, sf::SoundBuffer> m_buffers;
-    std::unique_ptr<sf::Sound> m_sound;
+    std::deque<sf::Sound> m_activeSounds;
     sf::Music m_music;
 };
 

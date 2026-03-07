@@ -4,6 +4,8 @@
 #include "GameState.h"
 #include "GameOverState.h"
 #include "VictoryState.h"
+#include "Config.h"
+#include "SoundManager.h"
 #include <iostream>
 
 Game::Game() 
@@ -25,6 +27,16 @@ bool Game::init() {
         }
     }
     
+    auto& sound = SoundManager::getInstance();
+    sound.loadSound(SoundID::Hit, Config::SOUND_HIT);
+    sound.loadSound(SoundID::Damage, Config::SOUND_DAMAGE);
+    sound.loadSound(SoundID::EnemyDeath, Config::SOUND_ENEMY_DEATH);
+    sound.loadSound(SoundID::PlayerDeath, Config::SOUND_PLAYER_DEATH);
+    sound.loadSound(SoundID::Victory, Config::SOUND_VICTORY);
+    sound.loadSound(SoundID::BonusPickUp, Config::SOUND_BONUS_PICKUP);
+    sound.loadMusic(Config::MUSIC_MAIN);
+    sound.playMusic();
+
     registerStates();
     m_stateStack.pushState(States::MainMenu);
     

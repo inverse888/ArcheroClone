@@ -137,9 +137,9 @@ RoomConfig LevelGenerator::getConfigForLevel(int levelNumber) {
     config.minObstacles = 6 + levelNumber;
     config.maxObstacles = 10 + levelNumber * 2;
     
-    // Level 1: only SIMPLE (Vampires1)
-    // Level 2: SIMPLE + FAST (Vampires2)  
-    // Level 3: SIMPLE + FAST + TANK (Vampires3)
+    // Level 1: only SIMPLE (Orc1)
+    // Level 2: SIMPLE + FAST (Orc2)
+    // Level 3: SIMPLE + FAST + TANK (Orc3)
     config.possibleEnemies.push_back(EnemyType::SIMPLE);
     if (levelNumber >= 2) config.possibleEnemies.push_back(EnemyType::FAST);
     if (levelNumber >= 3) config.possibleEnemies.push_back(EnemyType::TANK);

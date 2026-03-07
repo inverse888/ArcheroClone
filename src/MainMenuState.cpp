@@ -1,5 +1,6 @@
 #include "MainMenuState.h"
 #include "StateStack.h"
+#include "SoundManager.h"
 
 MainMenuState::MainMenuState(State::Context context)
 : State(context)
@@ -9,9 +10,14 @@ MainMenuState::MainMenuState(State::Context context)
         [this]() { 
             requestStackPush(States::LevelSelect);
         },
+        []() {
+            auto& sound = SoundManager::getInstance();
+            sound.setMuted(!sound.isMuted());
+        },
         [this]() { 
             requestStateClear();
-        }
+        },
+        !SoundManager::getInstance().isMuted()
     );
 }
 

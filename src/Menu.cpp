@@ -1,7 +1,7 @@
 #include "Menu.h"
 #include <iostream>
 
-Menu::Menu() : m_selectedButton(0) {
+Menu::Menu() : m_selectedButton(0), m_mode(Mode::Main), m_soundEnabled(true) {
 }
 
 bool Menu::init() {
@@ -13,25 +13,44 @@ bool Menu::init() {
     return true;
 }
 
-void Menu::createMainMenu(std::function<void()> onPlay, std::function<void()> onExit) {
+void Menu::createMainMenu(std::function<void()> onPlay,
+                          std::function<void()> onToggleSound,
+                          std::function<void()> onExit,
+                          bool soundEnabled) {
     m_buttons.clear();
     m_actions.clear();
+    m_mode = Mode::Main;
+    m_soundEnabled = soundEnabled;
     
     sf::Text playButton(m_font, "PLAY GAME", 50);
     playButton.setFillColor(sf::Color::White);
     sf::FloatRect b = playButton.getLocalBounds();
     playButton.setOrigin({b.size.x / 2.0f, b.size.y / 2.0f});
-    playButton.setPosition({400.0f, 250.0f});
+    playButton.setPosition({400.0f, 220.0f});
     m_buttons.push_back(playButton);
     m_actions.push_back(onPlay);
     
+    sf::Text soundButton(m_font, "", 44);
+    soundButton.setFillColor(sf::Color::White);
+    b = soundButton.getLocalBounds();
+    soundButton.setOrigin({b.size.x / 2.0f, b.size.y / 2.0f});
+    soundButton.setPosition({400.0f, 320.0f});
+    m_buttons.push_back(soundButton);
+    m_actions.push_back([this, onToggleSound]() {
+        m_soundEnabled = !m_soundEnabled;
+        if (onToggleSound) onToggleSound();
+        updateMainMenuSoundLabel();
+    });
+
     sf::Text exitButton(m_font, "EXIT", 50);
     exitButton.setFillColor(sf::Color::White);
     b = exitButton.getLocalBounds();
     exitButton.setOrigin({b.size.x / 2.0f, b.size.y / 2.0f});
-    exitButton.setPosition({400.0f, 350.0f});
+    exitButton.setPosition({400.0f, 420.0f});
     m_buttons.push_back(exitButton);
     m_actions.push_back(onExit);
+
+    updateMainMenuSoundLabel();
     
     m_selectedButton = 0;
     m_buttons[0].setFillColor(sf::Color::Yellow);
@@ -41,6 +60,7 @@ void Menu::createMainMenu(std::function<void()> onPlay, std::function<void()> on
 void Menu::createLevelSelectMenu(std::function<void(int)> onLevelSelected, std::function<void()> onBack) {
     m_buttons.clear();
     m_actions.clear();
+    m_mode = Mode::LevelSelect;
     
     for (int i = 1; i <= 3; i++) {
         sf::Text levelButton(m_font, "LEVEL " + std::to_string(i), 40);
@@ -65,7 +85,13 @@ void Menu::createLevelSelectMenu(std::function<void(int)> onLevelSelected, std::
     m_buttons[0].setScale({1.2f, 1.2f});
 }
 
-void Menu::setSoundToggleCallback(std::function<void()> callback) {
+void Menu::updateMainMenuSoundLabel() {
+    if (m_mode != Mode::Main || m_buttons.size() < 2) return;
+
+    m_buttons[1].setString(m_soundEnabled ? "SOUND: ON" : "SOUND: OFF");
+    sf::FloatRect b = m_buttons[1].getLocalBounds();
+    m_buttons[1].setOrigin({b.size.x / 2.0f, b.size.y / 2.0f});
+    m_buttons[1].setPosition({400.0f, 320.0f});
 }
 
 void Menu::update() {
