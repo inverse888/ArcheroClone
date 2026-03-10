@@ -12,7 +12,8 @@
 Level::Level() : m_levelNumber(1), m_completed(false), m_gameOver(false), 
                  m_enemiesKilled(0), m_totalEnemies(0), m_mousePressed(false),
                  m_heartSprite(m_heartTexture), m_hasHeartTexture(false),
-                 m_heartDropped(false), m_heartDropAtKill(1), m_contactDamageCooldown(0.0f) {
+                 m_heartDropped(false), m_heartDropAtKill(1), m_contactDamageCooldown(0.0f),
+                 m_floorSprite(m_floorTexture) {
 }
 
 bool Level::init(int levelNumber) {
@@ -31,10 +32,10 @@ bool Level::init(int levelNumber) {
     }
 
     if (m_heartTexture.loadFromFile(Config::HEART_SPRITE) || m_heartTexture.loadFromFile("assets/images/heart.png")) {
-        m_heartSprite.setTexture(m_heartTexture);
+        m_heartSprite.setTexture(m_heartTexture, true);
         sf::FloatRect bounds = m_heartSprite.getLocalBounds();
         m_heartSprite.setOrigin({bounds.size.x / 2.0f, bounds.size.y / 2.0f});
-        m_heartSprite.setScale({2.2f, 2.2f});
+        m_heartSprite.setScale({3.0f, 3.0f});
         m_hasHeartTexture = true;
     } else {
         m_hasHeartTexture = false;
@@ -56,20 +57,35 @@ bool Level::init(int levelNumber) {
     (void)m_bushTexture.loadFromFile(bushPath);
     (void)m_cactusTexture.loadFromFile(cactusPath);
     (void)m_treeTexture.loadFromFile(treePath);
-    (void)m_wallTexture.loadFromFile(Config::WALL_SPRITE);
+
+    std::string bgPath = "assets/images/background_first.png";
+    if (levelNumber == 2) bgPath = "assets/images/background_second.png";
+    if (levelNumber >= 3) bgPath = "assets/images/background_third.png";
+    bool bgLoaded = m_floorTexture.loadFromFile(bgPath);
+    if (!bgLoaded && levelNumber == 2) bgLoaded = m_floorTexture.loadFromFile("assets/images/background_second.avif");
+    if (!bgLoaded) bgLoaded = m_floorTexture.loadFromFile("assets/images/background_first.jpg");
+    if (!bgLoaded) bgLoaded = m_floorTexture.loadFromFile("assets/images/background_third.jpg");
+    if (bgLoaded) {
+        m_floorTexture.setSmooth(true);
+        m_floorSprite.setTexture(m_floorTexture, true);
+        sf::Vector2u sz = m_floorTexture.getSize();
+        if (sz.x > 0 && sz.y > 0) {
+            m_floorSprite.setScale({800.0f / static_cast<float>(sz.x), 600.0f / static_cast<float>(sz.y)});
+        }
+    }
+    m_floorSprite.setPosition({0.0f, 0.0f});
     
     m_player.init();
     m_player.setPosition(400.0f, 300.0f);
     
     LevelGenerator generator;
-    generator.generateLevel(levelNumber, m_enemies, m_obstacles, m_bushTexture, m_cactusTexture, m_treeTexture, m_wallTexture);
+    generator.generateLevel(levelNumber, m_enemies, m_obstacles, m_bushTexture, m_cactusTexture, m_treeTexture);
     
     m_totalEnemies = static_cast<int>(m_enemies.size());
     
     
     std::mt19937 rng(std::random_device{}());
-    std::uniform_int_distribution<int> dropKillDist(3, 4);
-    m_heartDropAtKill = std::max(1, std::min(m_totalEnemies, dropKillDist(rng)));
+    m_heartDropAtKill = (m_totalEnemies >= 3) ? 3 : m_totalEnemies;
     
     m_bullets.clear();
     m_heartBonuses.clear();
@@ -161,15 +177,7 @@ void Level::update(float deltaTime) {
 }
 
 void Level::render(sf::RenderWindow& window) {
-    sf::RectangleShape floor({800, 600});
-    if (m_levelNumber == 1) {
-        floor.setFillColor(sf::Color(30, 50, 30));
-    } else if (m_levelNumber == 2) {
-        floor.setFillColor(sf::Color(216, 236, 255));
-    } else {
-        floor.setFillColor(sf::Color(92, 28, 18));
-    }
-    window.draw(floor);
+    window.draw(m_floorSprite);
 
     for (const auto& obstacle : m_obstacles) {
         if (obstacle.sprite) window.draw(*obstacle.sprite);
@@ -179,7 +187,7 @@ void Level::render(sf::RenderWindow& window) {
         if (bonus.active) {
             if (m_hasHeartTexture) {
                 m_heartSprite.setPosition(bonus.position);
-                m_heartSprite.setScale(bonus.shape.getScale() * 2.2f);
+                m_heartSprite.setScale(bonus.shape.getScale() * 3.0f);
                 window.draw(m_heartSprite);
             } else {
                 window.draw(bonus.shape);
@@ -223,7 +231,7 @@ void Level::checkCollisions() {
                     m_enemiesKilled++;
                     
                     
-                    if (!m_heartDropped && m_enemiesKilled >= m_heartDropAtKill) {
+                    if (!m_heartDropped && m_enemiesKilled == m_heartDropAtKill) {
                         m_heartDropped = true;
                         spawnHeartBonus(enemy->getPosition());
                     }
@@ -280,10 +288,7 @@ void Level::checkCollisions() {
         m_enemies.end()
     );
 
-    if (!m_heartDropped && m_enemiesKilled > 0 && (m_enemiesKilled >= m_heartDropAtKill || m_enemies.size() <= 1)) {
-        m_heartDropped = true;
-        spawnHeartBonus(m_player.getPosition() + sf::Vector2f(28.0f, 0.0f));
-    }
+
 }
 
 void Level::updateBonuses(float deltaTime) {
@@ -364,10 +369,10 @@ void Level::spawnHeartBonus(const sf::Vector2f& position) {
     bonus.active = true;
     bonus.lifetime = HeartBonus::MAX_LIFETIME;
     
-    bonus.shape.setRadius(16.0f);
+    bonus.shape.setRadius(18.0f);
     bonus.shape.setFillColor(sf::Color::Red);
-    bonus.shape.setOrigin({16.0f, 16.0f});
-    bonus.shape.setPosition(position);
+    bonus.shape.setOrigin({18.0f, 18.0f});
+    bonus.shape.setPosition(bonus.position);
     
     m_heartBonuses.push_back(std::move(bonus));
 }

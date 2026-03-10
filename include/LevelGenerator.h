@@ -29,8 +29,7 @@ public:
                       std::vector<Obstacle>& obstacles,
                       const sf::Texture& bush,
                       const sf::Texture& cactus,
-                      const sf::Texture& tree,
-                      const sf::Texture& wall);
+                      const sf::Texture& tree);
     
 private:
     RoomConfig getConfigForLevel(int levelNumber);

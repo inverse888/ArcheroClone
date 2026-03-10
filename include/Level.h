@@ -19,7 +19,7 @@ struct HeartBonus {
     sf::Vector2f position;
     bool active;
     float lifetime;
-    static constexpr float MAX_LIFETIME = 5.0f;
+    static constexpr float MAX_LIFETIME = 3.0f;
 };
 
 class Level {
@@ -48,7 +48,8 @@ private:
     sf::Texture m_bushTexture;
     sf::Texture m_cactusTexture;
     sf::Texture m_treeTexture;
-    sf::Texture m_wallTexture;
+    sf::Texture m_floorTexture;
+    sf::Sprite m_floorSprite;
     
     std::unique_ptr<sf::Text> m_levelText;
     std::unique_ptr<sf::Text> m_healthText;

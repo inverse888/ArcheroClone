@@ -13,45 +13,22 @@ void LevelGenerator::generateLevel(int levelNumber,
                                  std::vector<Obstacle>& obstacles,
                                  const sf::Texture& bush,
                                  const sf::Texture& cactus,
-                                 const sf::Texture& tree,
-                                 const sf::Texture& wall) {
+                                 const sf::Texture& tree) {
     enemies.clear();
     obstacles.clear();
     
     RoomConfig config = getConfigForLevel(levelNumber);
     const sf::Texture* textures[3] = { &bush, &cactus, &tree };
-    std::uniform_real_distribution<float> wallChance(0.0f, 1.0f);
-    float lineWallChance = 0.30f;
-    float scatteredWallChance = 0.20f;
-    if (levelNumber == 2) {
-        lineWallChance = 0.45f;
-        scatteredWallChance = 0.32f;
-    } else if (levelNumber >= 3) {
-        lineWallChance = 0.58f;
-        scatteredWallChance = 0.42f;
-    }
-
-    auto makeObstacle = [&](const sf::Vector2f& pos, bool solidWall, int texIndex) {
+    auto makeObstacle = [&](const sf::Vector2f& pos, int texIndex) {
         Obstacle obs;
         obs.position = pos;
 
-        if (solidWall) {
-            obs.sprite = std::make_shared<sf::Sprite>(wall);
-            obs.sprite->setTextureRect(sf::IntRect({0, 0}, {160, 160}));
-            obs.sprite->setScale({0.35f, 0.35f});
-            sf::FloatRect lb = obs.sprite->getLocalBounds();
-            obs.sprite->setOrigin({lb.size.x / 2.0f, lb.size.y / 2.0f});
-            obs.sprite->setPosition(pos);
-            obs.bounds = sf::FloatRect(pos - sf::Vector2f(20.0f, 20.0f), {40.0f, 40.0f});
-        } else {
-            obs.sprite = std::make_shared<sf::Sprite>(*textures[texIndex]);
-            sf::FloatRect lb = obs.sprite->getLocalBounds();
-            obs.sprite->setOrigin({lb.size.x / 2.0f, lb.size.y / 2.0f});
-            obs.sprite->setPosition(pos);
-            obs.bounds = obs.sprite->getGlobalBounds();
-            obs.bounds = sf::FloatRect(obs.bounds.position + sf::Vector2f(8, 8), obs.bounds.size - sf::Vector2f(16, 16));
-        }
-
+        obs.sprite = std::make_shared<sf::Sprite>(*textures[texIndex]);
+        sf::FloatRect lb = obs.sprite->getLocalBounds();
+        obs.sprite->setOrigin({lb.size.x / 2.0f, lb.size.y / 2.0f});
+        obs.sprite->setPosition(pos);
+        obs.bounds = obs.sprite->getGlobalBounds();
+        obs.bounds = sf::FloatRect(obs.bounds.position + sf::Vector2f(8, 8), obs.bounds.size - sf::Vector2f(16, 16));
         obstacles.push_back(obs);
     };
     
@@ -68,7 +45,6 @@ void LevelGenerator::generateLevel(int levelNumber,
         
         std::uniform_int_distribution<int> texIdx(0, 2);
         int tex = texIdx(m_rng);
-        bool solidWallLine = wallChance(m_rng) < lineWallChance;
         
         
         float startX, startY;
@@ -105,7 +81,7 @@ void LevelGenerator::generateLevel(int levelNumber,
             
             if (pos.x < 20 || pos.x > 780 || pos.y < 20 || pos.y > 580) continue;
             
-            makeObstacle(pos, solidWallLine, tex);
+            makeObstacle(pos, tex);
         }
     }
     
@@ -125,7 +101,7 @@ void LevelGenerator::generateLevel(int levelNumber,
         }
         if (!valid) continue;
         
-        makeObstacle(pos, wallChance(m_rng) < scatteredWallChance, texRand(m_rng));
+        makeObstacle(pos, texRand(m_rng));
     }
     
     
