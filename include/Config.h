@@ -36,7 +36,8 @@ namespace Config {
     const std::string SOUND_VICTORY = "assets/sounds/victory.wav";
     const std::string SOUND_BONUS_PICKUP = "assets/sounds/bonus_pickup.wav";
     
-    const std::string FONT_MAIN = "assets/fonts/Helvetica.ttc";
+    const std::string FONT_MAIN = "assets/fonts/PixelifySans-VariableFont_wght.ttf";
+    const std::string MAIN_MENU_BG = "assets/pictures/main_menu_archero.jpg";
 }
 
 #endif

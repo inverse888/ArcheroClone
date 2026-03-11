@@ -4,6 +4,7 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <functional>
+#include <memory>
 
 class Menu {
 private:
@@ -18,6 +19,10 @@ private:
     int m_selectedButton;
     Mode m_mode;
     bool m_soundEnabled;
+
+    sf::Texture m_bgTexture;
+    std::unique_ptr<sf::Sprite> m_bgSprite;
+    bool m_hasBg = false;
     
 public:
     Menu();
@@ -35,6 +40,7 @@ public:
     void createLevelSelectMenu(std::function<void(int)> onLevelSelected, std::function<void()> onBack);
     
 private:
+    void styleButton(sf::Text& btn, bool selected);
     void updateMainMenuSoundLabel();
     void moveUp();
     void moveDown();

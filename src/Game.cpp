@@ -20,8 +20,8 @@ Game::Game()
 
 bool Game::init() {
     
-    if (!m_font.openFromFile("assets/fonts/Helvetica.ttc")) {
-        if (!m_font.openFromFile("/Library/Fonts/Arial.ttf")) {
+    if (!m_font.openFromFile(Config::FONT_MAIN)) {
+        if (!m_font.openFromFile("assets/fonts/Helvetica.ttc")) {
             std::cout << "Error: Font not found" << std::endl;
             return false;
         }

@@ -25,8 +25,8 @@ bool Level::init(int levelNumber) {
     m_heartDropped = false;
     m_contactDamageCooldown = 0.0f;
     
-    if (!m_font.openFromFile("assets/fonts/Helvetica.ttc")) {
-        if (!m_font.openFromFile("/Library/Fonts/Arial.ttf")) {
+    if (!m_font.openFromFile(Config::FONT_MAIN)) {
+        if (!m_font.openFromFile("assets/fonts/Helvetica.ttc")) {
             std::cout << "Warning: Font not found in Level" << std::endl;
         }
     }
