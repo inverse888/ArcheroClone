@@ -19,7 +19,6 @@ Bullet::Bullet(const sf::Vector2f& startPos, const sf::Vector2f& dir)
         m_sprite->setScale({0.6f, 0.6f});
         m_sprite->setPosition(m_position);
 
-        // Base sprite points LEFT, add 180 to flip toward flight direction
         float angleDeg = std::atan2(m_direction.y, m_direction.x) * 180.0f / 3.14159265f;
         m_sprite->setRotation(sf::degrees(angleDeg + 180.0f));
 
