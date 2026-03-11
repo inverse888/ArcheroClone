@@ -35,7 +35,8 @@ bool Level::init(int levelNumber) {
         m_heartSprite.setTexture(m_heartTexture, true);
         sf::FloatRect bounds = m_heartSprite.getLocalBounds();
         m_heartSprite.setOrigin({bounds.size.x / 2.0f, bounds.size.y / 2.0f});
-        m_heartSprite.setScale({3.0f, 3.0f});
+        float heartScale = (bounds.size.x > 32.0f) ? 0.8f : 3.0f;
+        m_heartSprite.setScale({heartScale, heartScale});
         m_hasHeartTexture = true;
     } else {
         m_hasHeartTexture = false;
@@ -187,7 +188,9 @@ void Level::render(sf::RenderWindow& window) {
         if (bonus.active) {
             if (m_hasHeartTexture) {
                 m_heartSprite.setPosition(bonus.position);
-                m_heartSprite.setScale(bonus.shape.getScale() * 3.0f);
+                sf::FloatRect hb = m_heartSprite.getLocalBounds();
+                float baseScale = (hb.size.x > 32.0f) ? 0.8f : 3.0f;
+                m_heartSprite.setScale(bonus.shape.getScale() * baseScale);
                 window.draw(m_heartSprite);
             } else {
                 window.draw(bonus.shape);

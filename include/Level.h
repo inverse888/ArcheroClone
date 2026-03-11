@@ -19,7 +19,7 @@ struct HeartBonus {
     sf::Vector2f position;
     bool active;
     float lifetime;
-    static constexpr float MAX_LIFETIME = 3.0f;
+    static constexpr float MAX_LIFETIME = 7.0f;
 };
 
 class Level {

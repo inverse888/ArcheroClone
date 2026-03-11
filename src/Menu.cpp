@@ -111,7 +111,7 @@ void Menu::updateMainMenuSoundLabel() {
     m_buttons[1].setString(m_soundEnabled ? "SOUND: ON" : "SOUND: OFF");
     sf::FloatRect b = m_buttons[1].getLocalBounds();
     m_buttons[1].setOrigin({b.size.x / 2.0f, b.size.y / 2.0f});
-    m_buttons[1].setPosition({400.0f, 320.0f});
+    m_buttons[1].setPosition({400.0f, 430.0f});
 }
 
 void Menu::update() {

@@ -26,7 +26,7 @@ namespace Config {
     const std::string LAVA_DECOR_SPRITE = "assets/craftpix-net-141354-free-top-down-bushes-pixel-art/PNG/Assets/Bush_red_flowers1.png";
     const std::string LAVA_TREE_SPRITE = "assets/craftpix-net-141354-free-top-down-bushes-pixel-art/PNG/Assets/Burned_tree1.png";
     const std::string BULLET_SPRITE = "assets/craftpix-net-665895-free-pixel-dungeon-props-and-objects-asset-pack/PNG/Arrow.png";
-    const std::string HEART_SPRITE = "assets/pictures/heart.png";
+    const std::string HEART_SPRITE = "assets/pictures/heart_new.png";
 
     const std::string MUSIC_MAIN = "assets/music/background.wav";
     const std::string SOUND_HIT = "assets/sounds/hit.wav";
