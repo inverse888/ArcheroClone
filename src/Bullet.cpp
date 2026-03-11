@@ -14,17 +14,14 @@ Bullet::Bullet(const sf::Vector2f& startPos, const sf::Vector2f& dir)
 
     if (m_texture.loadFromFile(Config::BULLET_SPRITE)) {
         m_sprite = std::make_unique<sf::Sprite>(m_texture);
-        // Arrow.png 592x192: sprite sheet with down-pointing arrows in row 0
-        // Frame at x=80: arrowhead at y=0-3, tail feathers at y=38-44
-        // Crop just head+shaft section for a compact arrow pointing DOWN
-        m_sprite->setTextureRect(sf::IntRect({80, 0}, {16, 16}));
-        m_sprite->setOrigin({8.0f, 8.0f});
-        m_sprite->setScale({4.0f, 4.0f});
+        sf::Vector2u sz = m_texture.getSize();
+        m_sprite->setOrigin({static_cast<float>(sz.x) / 2.0f, static_cast<float>(sz.y) / 2.0f});
+        m_sprite->setScale({0.6f, 0.6f});
         m_sprite->setPosition(m_position);
 
-        // Base sprite points DOWN (angle=+90), offset rotation accordingly
+        // Base sprite points LEFT, add 180 to flip toward flight direction
         float angleDeg = std::atan2(m_direction.y, m_direction.x) * 180.0f / 3.14159265f;
-        m_sprite->setRotation(sf::degrees(angleDeg - 90.0f));
+        m_sprite->setRotation(sf::degrees(angleDeg + 180.0f));
 
         m_hasTexture = true;
     } else {
